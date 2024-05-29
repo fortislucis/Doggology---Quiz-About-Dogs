@@ -222,7 +222,7 @@ async function main(){
             let timeLeft = animationEnd - Date.now();
 
             if (timeLeft <= 0) {
-                return clearInterval(interval);
+                return clearInterval(confettiInterval);
             }
 
             let particleCount = 50 * (timeLeft / duration);
