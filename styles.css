@@ -1,0 +1,212 @@
+:root{
+    --background-color: #D4C6AA;
+    --primary-color: #1d1c1a;
+    --secondary-color: #FAF8F6;
+    --highlight-color: #B4D9EF;
+    --correct-color: #A1F791;
+    --incorrect-color: #D26466;
+}
+
+*{
+    box-sizing: border-box;
+    padding: 0;
+    margin: 0;
+    color: var(--primary-color);
+}
+
+body{
+    background-color: var(--background-color);
+    background-image: 
+        url(assets/wave.svg),
+        url(assets/paws.png);
+    background-size: contain, cover;
+    background-repeat: no-repeat, no-repeat;
+    background-position-y: bottom;
+    background-blend-mode: normal, overlay;
+}
+
+main{
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+h1{
+    border-bottom: var(--primary-color) solid 2px;
+    margin-top: 10px;
+    padding-bottom: 10px;
+    position: fixed;
+    top: 0;
+}
+
+#quizContainer{
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+#prevQuestionButton{
+    font-size: 64px;
+    background-color: transparent;
+    border: none;
+    padding: 10px;
+    margin-right: 10px;
+}
+
+#nextQuestionButton{
+    font-size: 64px;
+    background-color: transparent;
+    border: none;
+    padding: 10px;
+    margin-left: 10px;
+}
+
+#prevQuestionButton:hover{
+    cursor: pointer;
+}
+
+#nextQuestionButton:hover{
+    cursor: pointer;
+}
+
+#quizContainer h3{
+    margin-bottom: 20px;
+    font-size: 3rem;
+}
+
+#quizContainer h2{
+    margin-bottom: 20px;
+}
+
+.bigButton{
+    margin-top: 20px;
+    background-color: var(--secondary-color);
+    border: 1px solid var(--primary-color);
+    border-radius: 50px;
+    font-size: 64px;
+    font-weight: bold;
+    padding: 10px;
+    cursor: pointer;
+
+    animation: oscillate 0.5s infinite alternate;
+    animation-timing-function: ease-in-out;
+}
+
+.bigButton:hover{
+    background-color: var(--highlight-color);
+}
+
+@keyframes oscillate {
+    to{
+        transform: translateY(-10px);
+    }
+}
+
+#quizContainer img{
+    max-width: 400px;
+    max-height: 400px;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    border: 2px solid var(--primary-color);
+
+    animation: sway 1s infinite alternate;
+    animation-timing-function: ease-in-out;
+}
+
+@keyframes sway {
+    from{
+        transform: rotate(-1deg);
+    }
+    to{
+        transform: rotate(1deg);
+    }
+}
+
+#buttonContainer{
+    width: 100%;
+    padding: 20px;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+    gap: 10px;
+}
+
+.choiceButton{
+    width: 100%;
+    padding: 10px;
+    background-color: var(--secondary-color);
+    border: 1px solid var(--primary-color);
+    border-radius: 8px;
+    background-color: var(--secondary-color);
+}
+
+.choiceButton:hover{
+    cursor: pointer;
+    background-color: var(--highlight-color);
+}
+
+.correct{
+    background-color: var(--correct-color);
+}
+
+.correct:hover{
+    cursor: not-allowed;
+    background-color: var(--correct-color);
+}
+
+.incorrect{
+    background-color: var(--incorrect-color);
+}
+
+.incorrect:hover{
+    cursor: not-allowed;
+    background-color: var(--incorrect-color);
+}
+
+#loadingDiv{
+    width: 100vw;
+    height: 100vh;
+    z-index: 10;
+    display: none;
+    justify-content: center;
+    align-items: center;
+    background-color: rgba(29, 28, 26, 0.25);
+}
+
+#loadingDiv span{
+    font-size: 10rem;
+    animation: spin 1s infinite linear;
+}
+
+@keyframes spin{
+    to{
+        transform: rotate(360deg);
+    }
+}
+
+.questionContainer{
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    animation: fade 0.5s ease-in-out;
+}
+
+@keyframes fade{
+    from{
+        opacity: 0;
+    }
+    to{
+        opacity: 1;
+    }
+}
+
+footer{
+    position: fixed;
+    bottom: 0;
+    margin-bottom: 10px;
+}
