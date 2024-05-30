@@ -184,7 +184,7 @@ h1{
 #loadingDiv{
     width: 100vw;
     height: 100vh;
-    z-index: 10;
+    z-index: 20;
     display: none;
     justify-content: center;
     align-items: center;
@@ -223,6 +223,37 @@ footer{
     position: fixed;
     bottom: 0;
     margin-bottom: 10px;
+}
+
+#difficultyDiv:popover-open{
+    background-color: rgba(29, 28, 26, 0.5);
+    width: 100vw;
+    height: 100vh;
+    border: none;
+    z-index: 10;
+}
+
+#difficultyCloseButton{
+    font-size: 4rem;
+    background-color: transparent;
+    border: none;
+    position: fixed;
+    top: 0;
+    right: 0;
+    margin-top: 10px;
+    margin-right: 10px;
+}
+
+#difficultyCloseButton:hover{
+    cursor: pointer;
+}
+
+#difficultyButtonsContainer{
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    text-align: center;
 }
 
 @media only screen and (max-width: 425px){

@@ -1,19 +1,26 @@
 class Quiz {
     constructor() {
-        this.breedsData = [];
+        this.randomBreedsData = [];
+        this.difficultyBreedsData = [];
         this.questions = {};
         this.score = 0;
         this.questionIndex = 1;
         this.ROUNDS = 5;
         this.CHOICE_NUMBERS = 4;
         this.ALL_BREEDS_URL = 'https://dog.ceo/api/breeds/list/all';
+        this.DIFFICULTY_BREEDS_URL = 'assets/difficulties.json';
         this.confettiInterval = null;
 
-        this.startButton = document.getElementById('startButton');
+        this.difficultyDiv = document.getElementById('difficultyDiv');
+        this.difficultyButtons = document.getElementsByClassName('difficultyButton');
         this.quizContainer = document.getElementById('quizContainer');
         this.loadingDiv = document.getElementById('loadingDiv');
 
-        this.startButton.addEventListener('click', () => this.startQuiz());
+        for(let i = 0; i < this.difficultyButtons.length; i++){
+            this.difficultyButtons[i].addEventListener('click', () => {
+                this.startQuiz(this.difficultyButtons[i].innerText.toLowerCase());
+            })
+        }
     }
 
     async fetchAllBreeds() {
@@ -23,6 +30,16 @@ class Quiz {
             return breeds.message;
         } catch (error) {
             console.error('Failed to fetch all breeds: ', error);
+        }
+    }
+
+    async fetchDifficultyBreeds(){
+        try {
+            const response = await fetch(this.DIFFICULTY_BREEDS_URL);
+            const breeds = await response.json();
+            return breeds;
+        } catch (error) {
+            console.error('Failed to fetch "difficulty.json": ', error);
         }
     }
 
@@ -37,45 +54,69 @@ class Quiz {
         }
     }
 
-    async startQuiz() {
+    async init(){
+        // fetch breed data from the API and JSON file
+        this.randomBreedsData = await this.fetchAllBreeds();
+        this.difficultyBreedsData = await this.fetchDifficultyBreeds();
+
+        this.randomBreedsData = Object.keys(this.randomBreedsData);
+    }
+
+    async startQuiz(difficulty) {
+        this.difficultyDiv.togglePopover();
+
+        // show loading screen and hide quiz container
         this.loadingDiv.style.display = 'flex';
         this.quizContainer.style.display = 'none';
-        this.breedsData = await this.fetchAllBreeds();
-        this.breedsData = Object.keys(this.breedsData);
 
-        await this.generateQuestions();
+        // if data has never been loaded yet
+        if(this.randomBreedsData.length == 0 && this.difficultyBreedsData == 0){
+            await this.init();
+        }
+
+        // show questions
+        await this.generateQuestions(difficulty);
         this.quizContainer.style.display = 'flex';
         this.quizContainer.style.flexDirection = 'row';
         this.loadingDiv.style.display = 'none';
         this.renderQuestions();
     }
 
-    async restartQuiz() {
+    restartQuiz() {
         this.score = 0;
-        this.loadingDiv.style.display = 'flex';
-        this.quizContainer.style.display = 'none';
-
-        await this.generateQuestions();
-        this.quizContainer.style.display = 'flex';
-        this.quizContainer.style.flexDirection = 'row';
-        this.loadingDiv.style.display = 'none';
-        this.renderQuestions();
+        this.difficultyDiv.togglePopover();
     }
 
-    getRandomBreed() {
-        return this.breedsData[Math.floor(Math.random() * this.breedsData.length)];
+    getRandomBreed(breedList) {
+        return breedList[Math.floor(Math.random() * breedList.length)];
     }
 
     getRandomBreedImage(images) {
         return images[Math.floor(Math.random() * images.length)];
     }
 
-    async generateQuestions() {
+    async generateQuestions(difficulty) {
+        let breedList;
+        switch (difficulty) {
+            case 'random':
+                breedList = this.randomBreedsData;
+                break;
+            case 'easy':
+                breedList = this.difficultyBreedsData['easy'];
+                break;
+            case 'medium':
+                breedList = this.difficultyBreedsData['medium'];
+                break;
+            case 'hard':
+                breedList = this.difficultyBreedsData['hard'];
+                break;
+        }
+
         for (let i = 0; i < this.ROUNDS; i++) {
-            const answer = this.getRandomBreed();
+            const answer = this.getRandomBreed(breedList);
             const answerImages = await this.fetchImagesUrls(answer);
             const answerImage = this.getRandomBreedImage(answerImages);
-            const choices = this.generateChoices(answer, this.CHOICE_NUMBERS);
+            const choices = this.generateChoices(answer, breedList, this.CHOICE_NUMBERS);
 
             this.questions[i + 1] = {
                 answer: answer,
@@ -85,13 +126,13 @@ class Quiz {
         }
     }
 
-    generateChoices(answer, number) {
+    generateChoices(answer, breedList, number) {
         const choices = [answer];
 
         for (let i = 1; i < number; i++) {
-            let choice = this.getRandomBreed();
+            let choice = this.getRandomBreed(breedList);
             while (choice == answer) {
-                choice = this.getRandomBreed();
+                choice = this.getRandomBreed(breedList);
             }
             choices.push(choice);
         }
@@ -162,7 +203,7 @@ class Quiz {
             document.getElementById('restartButton').addEventListener('click', async () => {
                 clearInterval(this.confettiInterval);
                 confetti.reset();
-                await this.restartQuiz();
+                this.restartQuiz();
             });
 
             this.showConfetti();

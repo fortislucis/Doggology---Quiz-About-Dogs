@@ -19,8 +19,18 @@
             <h3>🐕🐕‍🦺🦮🐩</h3>
             <h2>This quiz will test your knowledge about different breeds of dogs.</h2>
 
-            <button id="startButton" class="bigButton">🐾Start🐾</button>
+            <button popovertarget="difficultyDiv" class="bigButton">🐾Start🐾</button>
         </section>
+
+        <div id="difficultyDiv" popover>
+            <button id="difficultyCloseButton" popovertarget="difficultyDiv" popovertargetaction="hide">❌</button>
+            <div id="difficultyButtonsContainer">
+                <button class="bigButton difficultyButton">Easy</button>
+                <button class="bigButton difficultyButton">Medium</button>
+                <button class="bigButton difficultyButton">Hard</button>
+                <button class="bigButton difficultyButton">Random</button>
+            </div>
+        </div>
 
         <footer>
             <p>Powered by <a href="https://dog.ceo/dog-api/">Dog API</a></p>
