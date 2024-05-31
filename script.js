@@ -2,10 +2,11 @@ class Quiz {
     constructor() {
         this.randomBreedsData = [];
         this.difficultyBreedsData = [];
-        this.questions = {};
+        this.questions = [];
+        this.difficulty = null;
         this.score = 0;
-        this.questionIndex = 1;
-        this.ROUNDS = 5;
+        this.lives = 3;
+        this.questionIndex = 0;
         this.CHOICE_NUMBERS = 4;
         this.ALL_BREEDS_URL = 'https://dog.ceo/api/breeds/list/all';
         this.DIFFICULTY_BREEDS_URL = 'assets/difficulties.json';
@@ -63,6 +64,7 @@ class Quiz {
     }
 
     async startQuiz(difficulty) {
+        this.difficulty = difficulty;
         this.difficultyDiv.togglePopover();
 
         // show loading screen and hide quiz container
@@ -75,7 +77,7 @@ class Quiz {
         }
 
         // show questions
-        await this.generateQuestions(difficulty);
+        await this.generateQuestion();
         this.quizContainer.style.display = 'flex';
         this.quizContainer.style.flexDirection = 'row';
         this.loadingDiv.style.display = 'none';
@@ -95,9 +97,9 @@ class Quiz {
         return images[Math.floor(Math.random() * images.length)];
     }
 
-    async generateQuestions(difficulty) {
+    async generateQuestion() {
         let breedList;
-        switch (difficulty) {
+        switch (this.difficulty) {
             case 'random':
                 breedList = this.randomBreedsData;
                 break;
@@ -112,18 +114,30 @@ class Quiz {
                 break;
         }
 
-        for (let i = 0; i < this.ROUNDS; i++) {
-            const answer = this.getRandomBreed(breedList);
-            const answerImages = await this.fetchImagesUrls(answer);
-            const answerImage = this.getRandomBreedImage(answerImages);
-            const choices = this.generateChoices(answer, breedList, this.CHOICE_NUMBERS);
+        const answer = this.getRandomBreed(breedList);
+        const answerImages = await this.fetchImagesUrls(answer);
+        const answerImage = this.getRandomBreedImage(answerImages);
+        const choices = this.generateChoices(answer, breedList, this.CHOICE_NUMBERS);
+        let question = {
+            answer: answer,
+            image: answerImage,
+            choices: choices
+        };
+        const contents = `
+            <div class='questionContainer'>
+                <div class='questionTitleContainer'>
+                    <h2>Question ${this.questions.length + 1}</h2>
+                    <h4>Lives: ${this.lives}</h4>
+                </div>
+                <img src="${question.image}" alt="Dog Image" />
+                <div id='buttonContainer'>
+                    ${question.choices.map(choice => `<button class="choiceButton" data-answer="${question.answer}">${this.capitalizeFirstLetter(choice)}</button>`).join('')}
+                </div>
+            </div>
+            `;
+        question['contents'] = contents;
 
-            this.questions[i + 1] = {
-                answer: answer,
-                image: answerImage,
-                choices: choices
-            };
-        }
+        this.questions.push(question);
     }
 
     generateChoices(answer, breedList, number) {
@@ -131,7 +145,7 @@ class Quiz {
 
         for (let i = 1; i < number; i++) {
             let choice = this.getRandomBreed(breedList);
-            while (choice == answer) {
+            while (choice == answer || choices.includes(choice)) {
                 choice = this.getRandomBreed(breedList);
             }
             choices.push(choice);
@@ -142,20 +156,8 @@ class Quiz {
 
     renderQuestions() {
         let contents = '';
-        for (let i = 1; i < this.ROUNDS + 1; i++) {
-            const question = this.questions[i];
-
-            const content = `
-            <div class='questionContainer'>
-                <h2>Question ${i}</h2>
-                <img src="${question.image}" alt="Dog Image" />
-                <div id='buttonContainer'>
-                    ${question.choices.map(choice => `<button class="choiceButton" data-answer="${question.answer}">${this.capitalizeFirstLetter(choice)}</button>`).join('')}
-                </div>
-            </div>
-            `;
-
-            contents += content;
+        for (let i = 0; i < this.questions.length; i++) {
+            contents += this.questions[i].contents;
         }
 
         this.quizContainer.innerHTML = `<button id='prevQuestionButton'>←</button>${contents}<button id='nextQuestionButton'>→</button>`;
@@ -164,38 +166,49 @@ class Quiz {
         document.getElementById('nextQuestionButton').addEventListener('click', () => this.showSlides(this.questionIndex + 1));
 
         document.querySelectorAll('.choiceButton').forEach(button => {
-            button.addEventListener('click', (event) => {
+            button.addEventListener('click', async (event) => {
                 const userAnswer = event.target.innerText.toLowerCase();
                 const correctAnswer = event.target.getAttribute('data-answer');
 
                 if (userAnswer === correctAnswer) {
                     this.score++;
+                } else{
+                    this.lives--;
                 }
 
-                this.showAnswer(correctAnswer);
+                await this.showAnswer(correctAnswer);
+                await this.generateQuestion(this.difficulty);
+                this.questionIndex += 1;
+                this.renderQuestions();
             });
         });
 
-        this.showSlides(1);
+        this.showSlides(this.questionIndex);
     }
 
     showSlides(n) {
-        if (n < 1) {
+        if (n < 0 || n >= this.questions.length) {
             return;
         }
 
         this.questionIndex = n;
         const slides = document.getElementsByClassName('questionContainer');
 
-        if (n === 1) {
+        if (n === 0) {
             document.getElementById('prevQuestionButton').style.visibility = 'hidden';
         } else {
             document.getElementById('prevQuestionButton').style.visibility = 'visible';
         }
 
-        if (n > this.ROUNDS) {
+        if (n === this.questions.length - 1) {
+            document.getElementById('nextQuestionButton').style.visibility = 'hidden';
+        } else {
+            document.getElementById('nextQuestionButton').style.visibility = 'visible';
+        }
+
+        if (this.lives <= 0) {
             this.quizContainer.innerHTML =
-                `<h2>Your final score is ${this.score} out of ${this.ROUNDS}</h2>
+                `<h2>Your final score is ${this.score} out of ${this.questions.length}</h2>
             <button id="restartButton" class="bigButton">🐾Play Again🐾</button>
             `;
             this.quizContainer.style.flexDirection = 'column';
@@ -214,12 +227,12 @@ class Quiz {
             slides[i].style.display = 'none';
         }
 
-        slides[n - 1].style.display = 'flex';
+        slides[n].style.display = 'flex';
     }
 
-    showAnswer(correctAnswer) {
+    async showAnswer(correctAnswer) {
         const slides = document.getElementsByClassName('questionContainer');
-        slides[this.questionIndex - 1].querySelectorAll('.choiceButton').forEach(button => {
+        slides[this.questionIndex].querySelectorAll('.choiceButton').forEach(button => {
             if (button.innerHTML.toLowerCase() === correctAnswer) {
                 button.className += ' correct';
             } else {
@@ -228,6 +241,10 @@ class Quiz {
 
             button.disabled = true;
         });
+
+        this.questions[this.questionIndex]['contents'] = slides[this.questionIndex].outerHTML;
+
+        await this.delay(400);
     }
 
     showConfetti() {
@@ -265,6 +282,11 @@ class Quiz {
     randomInRange(min, max) {
         return Math.random() * (max - min) + min;
     }
+
+    delay(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+    
 }
 
 document.addEventListener('DOMContentLoaded', () => {
