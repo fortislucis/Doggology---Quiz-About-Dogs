@@ -5,6 +5,12 @@ class Quiz {
         this.questions = [];
         this.difficulty = null;
         this.score = 0;
+        this.highScore = {
+            'easy': null,
+            'medium': null,
+            'hard': null,
+            'random': null
+        };
         this.lives = 3;
         this.questionIndex = 0;
         this.CHOICE_NUMBERS = 4;
@@ -55,12 +61,59 @@ class Quiz {
         }
     }
 
-    async init(){
-        // fetch breed data from the API and JSON file
-        this.randomBreedsData = await this.fetchAllBreeds();
-        this.difficultyBreedsData = await this.fetchDifficultyBreeds();
+    isLocalStorageAvailable(){
+        try {
+            return typeof window.localStorage !== 'undefined';
+        } catch (error) {
+            return false;
+        }
+    }
 
-        this.randomBreedsData = Object.keys(this.randomBreedsData);
+    saveBreedData(breedList){
+        localStorage.setItem('breedList', JSON.stringify(breedList));
+    }
+
+    loadBreedData(){
+        return JSON.parse(localStorage.getItem('breedList'));
+    }
+
+    saveHighScore(score){
+        localStorage.setItem('highScore', JSON.stringify(score));
+    }
+
+    loadHighScore(){
+        const highScore = JSON.parse(localStorage.getItem('highScore'));
+        if(highScore){
+            return highScore;
+        } else{
+            return this.highScore;
+        }
+    }
+
+    async init(){
+        // initialize random breed data
+        if(this.randomBreedsData.length == 0){
+            if((this.isLocalStorageAvailable() && this.loadBreedData() == null) || !this.isLocalStorageAvailable()){
+                this.randomBreedsData = await this.fetchAllBreeds();
+                this.randomBreedsData = Object.keys(this.randomBreedsData);
+
+                if(this.isLocalStorageAvailable){
+                    this.saveBreedData(this.randomBreedsData);
+                }
+            } else if(this.isLocalStorageAvailable() && this.loadBreedData()){
+                this.randomBreedsData = this.loadBreedData();
+            }
+        }
+
+        // initialize difficulty breed data
+        if(this.difficultyBreedsData.length == 0){
+            this.difficultyBreedsData = await this.fetchDifficultyBreeds();
+        }
+
+        // get previous high score
+        if(this.isLocalStorageAvailable()){
+            this.highScore = this.loadHighScore();
+        }
     }
 
     async startQuiz(difficulty) {
@@ -71,10 +124,7 @@ class Quiz {
         this.loadingDiv.style.display = 'flex';
         this.quizContainer.style.display = 'none';
 
-        // if data has never been loaded yet
-        if(this.randomBreedsData.length == 0 && this.difficultyBreedsData == 0){
-            await this.init();
-        }
+        await this.init();
 
         // show questions
         await this.generateQuestion();
@@ -85,7 +135,10 @@ class Quiz {
     }
 
     restartQuiz() {
+        this.lives = 3;
         this.score = 0;
+        this.questions = [];
+        this.questionIndex = 0;
         this.difficultyDiv.togglePopover();
     }
 
@@ -207,11 +260,26 @@ class Quiz {
         }
 
         if (this.lives <= 0) {
+            let highScore;
+            if(this.highScore[this.difficulty] !== null){
+                highScore = `<h3>Your high score in ${this.difficulty} mode is ${this.highScore[this.difficulty]}.</h3>`;
+            } else{
+                highScore = '<h3></h3>';
+            }
             this.quizContainer.innerHTML =
-                `<h2>Your final score is ${this.score} out of ${this.questions.length}</h2>
+                `<h2>Your final score is ${this.score}!</h2>
+                ${highScore}
             <button id="restartButton" class="bigButton">🐾Play Again🐾</button>
             `;
             this.quizContainer.style.flexDirection = 'column';
+
+            if(this.highScore[this.difficulty] == null || this.score > this.highScore[this.difficulty]){
+                this.highScore[this.difficulty] = this.score;
+                
+                if(this.isLocalStorageAvailable()){
+                    this.saveHighScore(this.highScore);
+                }
+            }
 
             document.getElementById('restartButton').addEventListener('click', async () => {
                 clearInterval(this.confettiInterval);
